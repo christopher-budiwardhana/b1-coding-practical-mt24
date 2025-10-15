@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from terrain import generate_reference_and_limits
+from uuv_mission.terrain import generate_reference_and_limits
 
 class Submarine:
     def __init__(self):
@@ -84,7 +84,19 @@ class Mission:
         cave_depth = np.array(df['cave_depth'])
         return cls(reference, cave_height, cave_depth)
 
-
+class Controller:
+    '''
+    Developed as a class to accomodate further changes, eg.
+     - integral control (for full PID)
+     - adaptive control (parameter retuning)
+    '''
+    def __init__(self, KP, KD):
+        # PD control
+        self.KP = KP
+        self.KD = KD
+    def get_action(self,e_t,e_t1):
+        return KP*e_t + KD*(e_t-e_t1)
+    
 class ClosedLoop:
     def __init__(self, plant: Submarine, controller):
         self.plant = plant
@@ -98,12 +110,14 @@ class ClosedLoop:
         
         positions = np.zeros((T, 2))
         actions = np.zeros(T)
+        errors = np.zeros(T)
         self.plant.reset_state()
 
         for t in range(T):
             positions[t] = self.plant.get_position()
             observation_t = self.plant.get_depth()
-            # Call your controller here
+            errors[t] = positions[t][1] - observation_t
+            actions[t] = self.controller.get_action(errors[t],errors[t-1])
             self.plant.transition(actions[t], disturbances[t])
 
         return Trajectory(positions)
