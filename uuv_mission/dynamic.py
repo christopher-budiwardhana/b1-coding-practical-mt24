@@ -94,8 +94,9 @@ class Controller:
         # PD control
         self.KP = KP
         self.KD = KD
+        
     def get_action(self,e_t,e_t1):
-        return KP*e_t + KD*(e_t-e_t1)
+        return self.KP*e_t + self.KD*(e_t-e_t1)
     
 class ClosedLoop:
     def __init__(self, plant: Submarine, controller):
@@ -116,7 +117,7 @@ class ClosedLoop:
         for t in range(T):
             positions[t] = self.plant.get_position()
             observation_t = self.plant.get_depth()
-            errors[t] = positions[t][1] - observation_t
+            errors[t] = mission.reference[t]-observation_t
             actions[t] = self.controller.get_action(errors[t],errors[t-1])
             self.plant.transition(actions[t], disturbances[t])
 
@@ -129,4 +130,8 @@ class ClosedLoop:
 # Test for file import
 if __name__ == '__main__':
     mission = Mission.from_csv("../data/mission.csv")
-    print(mission.reference)
+    sub = Submarine()
+    controller = Controller(0.15, 0.6)
+    closed_loop = ClosedLoop(sub, controller)
+    trajectory = closed_loop.simulate_with_random_disturbances(mission)
+    trajectory.plot_completed_mission(mission)
