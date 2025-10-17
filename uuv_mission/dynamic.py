@@ -90,13 +90,14 @@ class Controller:
      - integral control (for full PID)
      - adaptive control (parameter retuning)
     '''
-    def __init__(self, KP, KD):
+    def __init__(self, KP, KD, sub):
         # PD control
         self.KP = KP
         self.KD = KD
+        self.sub = sub # submarine instance - to get time step size
         
     def get_action(self,e_t,e_t1):
-        return self.KP*e_t + self.KD*(e_t-e_t1)
+        return self.KP*e_t + self.KD*(e_t-e_t1)/self.sub.dt
     
 class ClosedLoop:
     def __init__(self, plant: Submarine, controller):
@@ -127,11 +128,11 @@ class ClosedLoop:
         disturbances = np.random.normal(0, variance, len(mission.reference))
         return self.simulate(mission, disturbances)
 
-# Test for file import
+# Test the whole code and plot trajectory
 if __name__ == '__main__':
     mission = Mission.from_csv("../data/mission.csv")
     sub = Submarine()
-    controller = Controller(0.15, 0.6)
+    controller = Controller(0.15, 0.6, sub)
     closed_loop = ClosedLoop(sub, controller)
     trajectory = closed_loop.simulate_with_random_disturbances(mission)
     trajectory.plot_completed_mission(mission)
