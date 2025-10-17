@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from uuv_mission.terrain import generate_reference_and_limits
+from control import Controller
 
 class Submarine:
     def __init__(self):
@@ -83,21 +84,6 @@ class Mission:
         cave_height = np.array(df['cave_height'])
         cave_depth = np.array(df['cave_depth'])
         return cls(reference, cave_height, cave_depth)
-
-class Controller:
-    '''
-    Developed as a class to accomodate further changes, eg.
-     - integral control (for full PID)
-     - adaptive control (parameter retuning)
-    '''
-    def __init__(self, KP, KD, sub):
-        # PD control
-        self.KP = KP
-        self.KD = KD
-        self.sub = sub # submarine instance - to get time step size
-        
-    def get_action(self,e_t,e_t1):
-        return self.KP*e_t + self.KD*(e_t-e_t1)/self.sub.dt
     
 class ClosedLoop:
     def __init__(self, plant: Submarine, controller):
